@@ -1,0 +1,128 @@
+parser grammar MonkeyScriptParser;
+
+options { tokenVocab=MonkeyScriptLexer; }
+
+// Programa: zero ou mais funções, seguido do bloco main
+programa
+    : funcao* MAIN bloco EOF
+    ;
+
+// Bloco genérico
+bloco
+    : ABRECHAVE comando* FECHACHAVE
+    ;
+
+// Comandos
+comando
+    : declaracao PONTOEVIRG
+    | atribuicao PONTOEVIRG
+    | incremento PONTOEVIRG
+    | condicional
+    | laco
+    | retorno PONTOEVIRG
+    | chamada PONTOEVIRG
+    | expressao PONTOEVIRG
+    ;
+
+// Declaração de variáveis
+declaracao
+    : tipo ID (IGUAL expressao)?
+    ;
+
+// Atribuição
+atribuicao
+    : ID IGUAL expressao
+    ;
+
+// Incremento/decremento
+incremento
+    : ID INCR
+    | ID DECR
+    ;
+
+// Condicional (if / else if / else)
+condicional
+    : SE ABREPAR expressao FECHAPAR bloco
+      (SENAOSE ABREPAR expressao FECHAPAR bloco)*
+      (SENAO bloco)?
+    ;
+
+// Laços (while, do/while, for)
+laco
+    : lacoWhile
+    | lacoDoWhile
+    | lacoFor
+    ;
+
+lacoWhile
+    : WHILE ABREPAR expressao FECHAPAR bloco
+    ;
+
+lacoDoWhile
+    : DO bloco WHILE ABREPAR expressao FECHAPAR PONTOEVIRG
+    ;
+
+// for (init ; cond ; inc)
+lacoFor
+    : FOR ABREPAR inicializacaoFor? PONTOEVIRG expressao? PONTOEVIRG expressao? FECHAPAR bloco
+    ;
+
+inicializacaoFor
+    : declaracao
+    | atribuicao
+    ;
+
+// Funções: declaração e parâmetros
+funcao
+    : FUNCAO ID ABREPAR parametros? FECHAPAR bloco
+    ;
+
+parametros
+    : parametro (VIRGULA parametro)*
+    ;
+
+parametro
+    : tipo ID
+    ;
+
+// Chamadas de função e argumentos
+chamada
+    : ID ABREPAR argumentos? FECHAPAR
+    ;
+
+argumentos
+    : expressao (VIRGULA expressao)*
+    ;
+
+// Retorno
+retorno
+    : RETORNO expressao?
+    ;
+
+// Expressões
+expressao
+    : expressao POT expressao                               # ExprPotencia
+    | expressao (MULT | DIV | MOD) expressao                # ExprMultDivMod
+    | expressao (MAIS | MENOS) expressao                    # ExprMaisMenos
+    | expressao (IGUALDADE | DIFERENTE
+                | MENOR | MENORIGUAL
+                | MAIOR | MAIORIGUAL) expressao             # ExprComparacao
+    | expressao (E_LOGICO | OU_LOGICO) expressao            # ExprLogica
+    | NAO expressao                                         # ExprNao
+    | ABREPAR expressao FECHAPAR                            # ExprParenteses
+    | chamada                                               # ExprChamada
+    | ID                                                    # ExprId
+    | NUM_INT                                               # ExprInteiro
+    | NUM_REAL                                              # ExprReal
+    | VERDADEIRO                                            # ExprVerdadeiro
+    | FALSO                                                 # ExprFalso
+    | CADEIA                                                # ExprTexto
+    ;
+
+// Tipos
+tipo
+    : INTEIRO
+    | BOOLEANO
+    | TEXTO
+    | REAL
+    ;
